@@ -2,27 +2,19 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <title>Gantt Realtime Multiutente</title>
-  <link href="https://unpkg.com/vis-timeline/styles/vis-timeline-graph2d.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <title>Gantt Timeline Realtime</title>
+  <script src="https://unpkg.com/vis-timeline@latest/standalone/umd/vis-timeline-graph2d.min.js"></script>
+  <link href="https://unpkg.com/vis-timeline@latest/styles/vis-timeline-graph2d.min.css" rel="stylesheet" />
+  <style>
+    body { font-family: sans-serif; padding: 10px; }
+    #timeline { height: 400px; border: 1px solid #ccc; }
+    button { margin-top: 10px; }
+  </style>
 </head>
 <body>
-  <h1>📅 Gantt Realtime Multiutente (Koyeb)</h1>
-
-  <div id="controls">
-    <input type="text" id="taskContent" placeholder="Nome task">
-    <input type="text" id="taskCommessa" placeholder="Commessa">
-    <button id="addTask">➕ Aggiungi Task</button>
-
-    <label for="filterCommessa">Filtra commessa:</label>
-    <select id="filterCommessa">
-      <option value="tutte">Tutte</option>
-    </select>
-  </div>
-
+  <h1>📅 Timeline Realtime Multiutente</h1>
   <div id="timeline"></div>
-
-  <script src="https://unpkg.com/vis-timeline/standalone/umd/vis-timeline-graph2d.min.js"></script>
+  <button id="addTask">➕ Aggiungi Task</button>
   <script src="script.js"></script>
 </body>
 </html>
