@@ -1,0 +1,22 @@
+body {
+  font-family: sans-serif;
+  margin: 1rem;
+}
+
+#controls {
+  margin-bottom: 1rem;
+}
+
+#controls input, #controls select, #controls button {
+  padding: 0.3rem 0.5rem;
+  margin-right: 0.3rem;
+}
+
+#timeline {
+  border: 1px solid #ddd;
+  height: 500px;
+}
+
+.vis-item {
+  border-width: 2px;
+}
