@@ -45,7 +45,7 @@ function renderTimeline() {
 
   // Eventi di modifica → sincronizzazione con server
   timeline.on("add", syncWithServer);
-  timeline.on("update", syncWithServer);
+  timeline.on("updateTime", syncWithServer);
   timeline.on("remove", syncWithServer);
   timeline.on("change", syncWithServer);
 }
@@ -53,9 +53,26 @@ function renderTimeline() {
 // 🌀 Aggiorna timeline quando arrivano modifiche dagli altri
 function refreshTimeline() {
   if (!items) return;
-  items.clear();
-  items.add(tasks);
+
+  // 1️⃣ Aggiorna o aggiungi task
+  tasks.forEach((t) => {
+    const existing = items.get(t.id);
+    if (existing) {
+      items.update(t); // aggiorna solo se già esiste
+    } else {
+      items.add(t); // aggiunge se nuovo
+    }
+  });
+
+  // 2️⃣ Rimuovi task cancellati
+  const currentIds = tasks.map(t => t.id);
+  items.get().forEach(t => {
+    if (!currentIds.includes(t.id)) {
+      items.remove(t.id);
+    }
+  });
 }
+
 
 // ➕ Aggiungi nuovo task
 document.getElementById("addTask").addEventListener("click", () => {
