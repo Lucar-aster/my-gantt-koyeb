@@ -1,97 +1,54 @@
-const socket = new WebSocket(location.origin.replace(/^http/, "ws"));
-const container = document.getElementById("timeline");
-const items = new vis.DataSet([]);
-const groups = new vis.DataSet([]);
-const timeline = new vis.Timeline(container, items, {
-  editable: { add: true, remove: true, updateTime: true },
-  stack: true,
-  groupOrder: "id",
-  groups: groups
-});
-
-const colors = {};
-function getColor(commessa) {
-  if (!colors[commessa]) {
-    colors[commessa] = `hsl(${Math.floor(Math.random() * 360)},70%,70%)`;
-  }
-  return colors[commessa];
-}
-
-function updateGroups() {
-  const commesse = [...new Set(items.get().map((t) => t.group))];
-  groups.clear();
-  commesse.forEach((c) => groups.add({ id: c, content: c }));
-
-  const select = document.getElementById("filterCommessa");
-  const selected = select.value;
-  select.innerHTML = `<option value="tutte">Tutte</option>`;
-  commesse.forEach((c) => {
-    const opt = document.createElement("option");
-    opt.value = c;
-    opt.textContent = c;
-    select.appendChild(opt);
-  });
-  select.value = selected || "tutte";
-  applyFilter();
-}
-
-function applyFilter() {
-  const filter = document.getElementById("filterCommessa").value;
-  const all = items.get();
-  all.forEach((t) => {
-    items.update({ ...t, visible: filter === "tutte" ? true : t.group === filter });
-  });
-}
-
-document.getElementById("filterCommessa").addEventListener("change", applyFilter);
+const socket = new WebSocket(`wss://${window.location.host}`);
+let tasks = [];
+let timeline;
+let items;
 
 // Ricezione messaggi dal server
-socket.onmessage = (event) => {
+socket.addEventListener("message", (event) => {
   const data = JSON.parse(event.data);
-  if (data.type === "init" || data.type === "sync") {
-    items.clear();
-    items.add(data.tasks);
-    updateGroups();
+
+  if (data.type === "init") {
+    tasks = data.tasks;
+    renderTimeline();
   }
-};
 
-// Aggiunta task
+  if (data.type === "update") {
+    tasks = data.tasks;
+    updateTimeline();
+  }
+});
+
+// Render iniziale timeline
+function renderTimeline() {
+  const container = document.getElementById("timeline");
+  items = new vis.DataSet(tasks);
+  timeline = new vis.Timeline(container, items, { editable: true });
+
+  timeline.on("change", () => syncWithServer());
+  timeline.on("add", () => syncWithServer());
+  timeline.on("update", () => syncWithServer());
+  timeline.on("remove", () => syncWithServer());
+}
+
+// Aggiornamento quando arrivano modifiche da altri
+function updateTimeline() {
+  if (!items) return;
+  items.clear();
+  items.add(tasks);
+}
+
+// Aggiungi nuovo task
 document.getElementById("addTask").addEventListener("click", () => {
-  const content = document.getElementById("taskContent").value.trim();
-  const commessa = document.getElementById("taskCommessa").value.trim();
-  if (!content || !commessa) return alert("Inserisci nome task e commessa!");
-
-  const id = "task-" + Date.now();
-  const now = new Date();
-  const end = new Date(now.getTime() + 60 * 60 * 1000);
-
-  const task = {
-    id,
-    content,
-    start: now.toISOString(),
-    end: end.toISOString(),
-    group: commessa,
-    style: `background-color:${getColor(commessa)}`
-  };
-
-  items.add(task);
-  socket.send(JSON.stringify({ type: "add", task }));
-  updateGroups();
-
-  document.getElementById("taskContent").value = "";
-  document.getElementById("taskCommessa").value = "";
+  const id = Date.now().toString();
+  const start = new Date();
+  const end = new Date(start.getTime() + 60 * 60 * 1000);
+  const newTask = { id, content: "Nuovo Task", start, end };
+  items.add(newTask);
+  syncWithServer();
 });
 
-// Modifiche e cancellazioni
-timeline.on("change", (e) => {
-  e.items.forEach((id) => {
-    const t = items.get(id);
-    socket.send(JSON.stringify({ type: "update", task: t }));
-  });
-});
-
-timeline.on("remove", (e) => {
-  e.items.forEach((id) => {
-    socket.send(JSON.stringify({ type: "remove", id }));
-  });
-});
+// Sincronizza con server
+function syncWithServer() {
+  const currentTasks = items.get();
+  socket.send(JSON.stringify({ type: "update", tasks: currentTasks }));
+}
